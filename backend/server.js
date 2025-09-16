@@ -24,7 +24,8 @@ const io = socketIo(server, {
     credentials: true
   },
   transports: ['websocket', 'polling'],
-  allowEIO3: true
+  allowEIO3: true,
+  path: '/my-socket/'
 });
 
 const PORT = process.env.PORT || 5000;

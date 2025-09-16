@@ -33,7 +33,8 @@ const ChatInterface: React.FC = () => {
       timeout: 20000,
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      path: '/my-socket/'
     });
     
     newSocket.on('bot-response', (data) => {
