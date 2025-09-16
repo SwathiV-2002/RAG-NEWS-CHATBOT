@@ -134,7 +134,7 @@ class NewsService {
       console.log('Storing articles in vector database...');
       
       // Check if vector service is available
-      if (!vectorService.client) {
+      if (!vectorService.isQdrantAvailable()) {
         console.log('⚠️  Vector database not available - skipping article storage');
         return;
       }
