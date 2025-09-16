@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Parser = require('rss-parser');
-const cheerio = require('cheerio');
+// const cheerio = require('cheerio'); // Temporarily disabled due to Node.js 18 compatibility
 const vectorService = require('./vectorService');
 
 class NewsService {
@@ -79,24 +79,9 @@ class NewsService {
             }
           });
           
-          const $ = cheerio.load(response.data);
-          
-          // Try to extract main content
-          const contentSelectors = [
-            'article .story-body',
-            'article .article-body',
-            '.article-content',
-            '.entry-content',
-            'main article',
-            '.story-content'
-          ];
-          
-          for (const selector of contentSelectors) {
-            const content = $(selector).text().trim();
-            if (content.length > fullContent.length) {
-              fullContent = content;
-            }
-          }
+          // Temporarily disabled cheerio due to Node.js 18 compatibility
+          // Use RSS content only for now
+          console.log(`Using RSS content for ${item.title} (${fullContent.length} chars)`);
         } catch (error) {
           console.log(`Could not fetch full content for ${item.link}:`, error.message);
         }
