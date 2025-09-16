@@ -27,7 +27,9 @@ class VectorService {
       
       // Store the base URL for direct REST API calls
       this.qdrantBaseUrl = qdrantUrl;
-      this.apiKey = process.env.QDRANT_API_KEY;
+      this.apiKey = process.env.QDRANT_API_KEY || null; // Make API key optional
+      
+      console.log('Qdrant API Key:', this.apiKey ? 'Set' : 'Not set (using no auth)');
       
       // Test connection with direct REST API call
       await this.testConnection();
