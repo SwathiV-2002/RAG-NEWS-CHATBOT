@@ -13,10 +13,22 @@ class VectorService {
     try {
       console.log('Initializing vector service...');
       
+      // Parse QDRANT_URL to handle port correctly
+      let qdrantUrl = process.env.QDRANT_URL || 'http://localhost:6333';
+      console.log('Qdrant URL:', qdrantUrl);
+      
+      // For Render.com, ensure we use the correct format
+      if (qdrantUrl.includes('onrender.com')) {
+        // Remove any port specification and let the client use default HTTPS port
+        qdrantUrl = qdrantUrl.replace(/:443$/, '').replace(/:6333$/, '');
+        console.log('Adjusted Qdrant URL for Render.com:', qdrantUrl);
+      }
+      
       // Initialize Qdrant client
       this.client = new QdrantClient({
-        url: process.env.QDRANT_URL || 'http://localhost:6333',
-        apiKey: process.env.QDRANT_API_KEY
+        url: qdrantUrl,
+        apiKey: process.env.QDRANT_API_KEY,
+        timeout: 30000 // Increase timeout to 30 seconds
       });
 
       // Create collection if it doesn't exist
