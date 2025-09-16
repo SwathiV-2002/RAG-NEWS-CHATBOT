@@ -1,204 +1,175 @@
 # RAG News Chatbot - Backend
 
-A Node.js backend service for a RAG-powered news chatbot that uses vector embeddings, Redis for session management, and Google Gemini for response generation.
+Node.js backend service for the RAG News Chatbot application.
 
-## Features
+## 🚀 Live Demo
 
-- **News Ingestion**: Fetches news articles from multiple RSS feeds
-- **Vector Search**: Uses Jina embeddings and Qdrant for semantic search
-- **RAG Pipeline**: Retrieves relevant articles and generates responses with Gemini
-- **Session Management**: Redis-based session storage with TTL
-- **Real-time Chat**: Socket.io for real-time communication
-- **REST API**: Express.js API for chat, session management, and health checks
+**API Base URL**: https://rag-news-chatbot-backend.onrender.com
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Real-time**: Socket.io
-- **Cache/Sessions**: Redis
-- **Vector DB**: Qdrant
-- **Embeddings**: Jina AI
-- **LLM**: Google Gemini
-- **News Parsing**: RSS Parser + Cheerio
+- **Node.js** - JavaScript runtime
+- **Express.js** - Web framework
+- **Socket.io** - Real-time communication
+- **Redis** - Session management and caching
+- **Qdrant** - Vector database
+- **Google Gemini API** - LLM for responses
+- **Jina Embeddings API** - Text embeddings
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Node.js (v16 or higher)
+### Prerequisites
+- Node.js 16+
 - Redis server
-- Qdrant vector database
-- API keys for Jina AI and Google Gemini
+- Qdrant instance
+- API keys for Gemini and Jina
 
-## Installation
+### Installation
 
-1. Install dependencies:
 ```bash
 npm install
-```
-
-2. Set up environment variables:
-```bash
 cp env.example .env
-```
-
-3. Configure your `.env` file with the required API keys and URLs.
-
-4. Start the server:
-```bash
-# Development
-npm run dev
-
-# Production
+# Add your API keys to .env
 npm start
 ```
 
-## Environment Variables
+### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `PORT` | Server port | No (default: 5000) |
-| `FRONTEND_URL` | Frontend URL for CORS | No (default: http://localhost:3000) |
-| `GEMINI_API_KEY` | Google Gemini API key | Yes |
-| `JINA_API_KEY` | Jina AI embeddings API key | Yes |
-| `REDIS_URL` | Redis connection URL | No (default: redis://localhost:6379) |
-| `QDRANT_URL` | Qdrant server URL | No (default: http://localhost:6333) |
-| `QDRANT_API_KEY` | Qdrant API key | No |
+```bash
+# Server Configuration
+NODE_ENV=production
+PORT=5000
+FRONTEND_URL=https://rag-news-chatbot-frontend.onrender.com
 
-## API Endpoints
+# API Keys
+GEMINI_API_KEY=your_gemini_api_key
+JINA_API_KEY=your_jina_api_key
 
-### Health Check
-- `GET /api/health` - Server health status
+# Database Configuration
+REDIS_URL=redis://your-redis-url:6379
+QDRANT_URL=https://your-qdrant-url.com
+QDRANT_API_KEY=your_qdrant_api_key
 
-### Chat
-- `POST /api/chat` - Send a message and get AI response
-  - Body: `{ message: string, sessionId: string }`
-  - Response: `{ response: string, relevantArticles: array, sessionId: string }`
+# Cache Configuration
+SESSION_TTL=86400
+CACHE_TTL=3600
+```
 
-### Sessions
-- `POST /api/session` - Create a new session
-  - Response: `{ sessionId: string }`
-- `GET /api/session/:sessionId/history` - Get session chat history
-  - Response: `{ history: array, sessionId: string }`
-- `DELETE /api/session/:sessionId` - Clear session history
-  - Response: `{ message: string, sessionId: string }`
+## 📁 Project Structure
 
-## Socket.io Events
-
-### Client to Server
-- `join-session` - Join a specific session
-- `chat-message` - Send a chat message
-  - Data: `{ message: string, sessionId: string }`
-
-### Server to Client
-- `bot-response` - Receive AI response
-  - Data: `{ response: string, relevantArticles: array, sessionId: string }`
-- `error` - Error message
-  - Data: `{ message: string }`
-
-## Services
-
-### NewsService
-- Fetches news articles from RSS feeds
-- Processes and cleans article content
-- Stores articles in vector database
-
-### VectorService
-- Manages Qdrant vector database
-- Creates embeddings using Jina AI
-- Performs semantic search
-
-### RAGService
-- Combines retrieval and generation
-- Retrieves relevant articles for queries
-- Generates responses using Gemini
-
-### SessionService
-- Manages user sessions in Redis
-- Stores chat history
-- Handles session cleanup
-
-## Development
-
-### Project Structure
 ```
 backend/
-├── services/
-│   ├── newsService.js      # News ingestion and processing
-│   ├── vectorService.js    # Vector database operations
-│   ├── ragService.js       # RAG pipeline
-│   └── sessionService.js   # Session management
-├── server.js               # Main server file
-├── package.json
-└── README.md
+├── services/              # Business logic
+│   ├── newsService.js    # News ingestion and processing
+│   ├── ragService.js     # RAG pipeline and AI responses
+│   ├── sessionService.js # Session management
+│   └── vectorService.js  # Vector operations
+├── config/               # Configuration
+│   └── index.js         # Environment configuration
+├── server.js            # Main server file
+├── package.json         # Dependencies
+└── env.example         # Environment template
 ```
 
-### Adding New News Sources
+## 🔧 API Endpoints
 
-Add RSS feed URLs to the `rssFeeds` array in `newsService.js`:
+### Health & Status
+- `GET /` - Service health check
+- `GET /api/health` - Detailed status
 
-```javascript
-this.rssFeeds = [
-  'https://feeds.reuters.com/reuters/topNews',
-  'https://your-news-source.com/rss.xml'
-];
-```
+### Chat & Sessions
+- `POST /api/chat` - Send chat message
+- `POST /api/session` - Create new session
+- `GET /api/session/:id/history` - Get session history
+- `DELETE /api/session/:id` - Clear session
 
-### Customizing Embeddings
+### Topics & Content
+- `GET /api/topics` - Get available news topics
+- `POST /api/test` - Test endpoint
 
-The service uses Jina embeddings by default. To use a different embedding service, modify the `createEmbedding` method in `vectorService.js`.
+## 🎯 RAG Pipeline
 
-## Deployment
+### 1. News Ingestion
+- Fetches articles from 15+ RSS feeds
+- Processes and cleans content
+- Generates unique article IDs
 
-### Using Docker
+### 2. Embedding Generation
+- Uses Jina API to create text embeddings
+- Processes article titles and content
+- Handles API rate limits and errors
 
-1. Create a `Dockerfile`:
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 5000
-CMD ["npm", "start"]
-```
+### 3. Vector Storage
+- Stores embeddings in Qdrant vector database
+- Creates collections and indexes
+- Manages vector similarity search
 
-2. Build and run:
-```bash
-docker build -t rag-chatbot-backend .
-docker run -p 5000:5000 rag-chatbot-backend
-```
+### 4. Query Processing
+- Converts user queries to embeddings
+- Performs similarity search
+- Retrieves top-k relevant articles
 
-### Environment Setup
+### 5. Response Generation
+- Uses Gemini API for contextual responses
+- Incorporates retrieved article context
+- Handles streaming responses
 
-For production deployment:
+## 🔄 Real-time Communication
 
-1. Set up Redis server
-2. Set up Qdrant vector database
-3. Configure environment variables
-4. Use a process manager like PM2
+### Socket.io Events
+- `join-session` - Join a chat session
+- `chat-message` - Send a message
+- `bot-response` - Receive AI response
+- `error` - Handle errors
 
-## Monitoring
+### Session Management
+- Redis-based session storage
+- TTL-based session cleanup
+- Message history persistence
 
-The service includes basic health checks and logging. For production monitoring, consider adding:
+## 📊 Performance Features
 
-- Application performance monitoring (APM)
-- Log aggregation
-- Metrics collection
-- Error tracking
+### Caching
+- Redis caching for sessions
+- Response caching for common queries
+- TTL-based cache invalidation
 
-## Troubleshooting
+### Error Handling
+- Graceful service degradation
+- Fallback responses
+- Comprehensive error logging
 
-### Common Issues
+### Rate Limiting
+- Built-in protection against abuse
+- Configurable rate limits
+- Service health monitoring
 
-1. **Redis Connection Error**: Ensure Redis server is running
-2. **Qdrant Connection Error**: Check Qdrant server status
-3. **API Key Errors**: Verify all required API keys are set
-4. **Memory Issues**: Monitor Redis memory usage and set appropriate TTLs
+## 🚀 Deployment
 
-### Logs
+Deployed on Render.com with:
+- Automatic GitHub deployments
+- Environment variable management
+- Health check endpoints
+- Log monitoring
 
-The service logs important events to the console. For production, redirect logs to files or use a logging service.
+## 🔒 Security
 
-## License
+- CORS configuration
+- Helmet security middleware
+- Input validation
+- API key protection
+- Rate limiting
 
-ISC
+## 📈 Monitoring
+
+- Health check endpoints
+- Service status monitoring
+- Error logging and tracking
+- Performance metrics
+
+## 🧪 Testing
+
+- Health check endpoints
+- API endpoint testing
+- Service integration testing
+- Error scenario testing

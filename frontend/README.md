@@ -1,254 +1,118 @@
 # RAG News Chatbot - Frontend
 
-A React TypeScript frontend for the RAG-powered news chatbot with real-time chat capabilities, session management, and modern UI design.
+React-based frontend for the RAG News Chatbot application.
 
-## Features
+## 🚀 Live Demo
 
-- **Real-time Chat**: Socket.io integration for instant messaging
-- **Session Management**: Persistent chat history with session clearing
-- **Modern UI**: Responsive design with SCSS styling and dark mode support
-- **Typing Indicators**: Visual feedback during bot responses
-- **Relevant Articles**: Display of source articles used for responses
-- **Mobile Responsive**: Optimized for all screen sizes
+**Production URL**: https://rag-news-chatbot-frontend.onrender.com
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Framework**: React 18 with TypeScript
-- **Styling**: SCSS with CSS modules
-- **State Management**: React Context API
-- **Real-time**: Socket.io Client
-- **HTTP Client**: Axios
-- **Build Tool**: Create React App
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **SCSS** - Enhanced styling
+- **Socket.io Client** - Real-time communication
+- **Axios** - HTTP client
+- **Context API** - State management
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Node.js (v16 or higher)
-- Backend server running on port 5000
+### Prerequisites
+- Node.js 16+
+- Backend service running
 
-## Installation
+### Installation
 
-1. Install dependencies:
 ```bash
 npm install
-```
-
-2. Set up environment variables:
-```bash
 cp env.example .env
-```
-
-3. Configure your `.env` file with the backend URL.
-
-4. Start the development server:
-```bash
+# Update environment variables
 npm start
 ```
 
-The app will open at [http://localhost:3000](http://localhost:3000).
+### Environment Variables
 
-## Environment Variables
+```bash
+# Development
+REACT_APP_ENV=development
+REACT_APP_API_URL=http://localhost:5000/api
+REACT_APP_SOCKET_URL=http://localhost:5000
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `REACT_APP_API_URL` | Backend API URL | http://localhost:5000/api |
-| `REACT_APP_SOCKET_URL` | Socket.io server URL | http://localhost:5000 |
-| `REACT_APP_ENV` | Environment | development |
-
-## Project Structure
-
-```
-src/
-├── components/
-│   ├── ChatInterface.tsx    # Main chat component
-│   ├── ChatMessages.tsx     # Message display component
-│   ├── ChatInput.tsx        # Input form component
-│   ├── TypingIndicator.tsx  # Typing animation
-│   └── Header.tsx           # App header
-├── contexts/
-│   └── SessionContext.tsx   # Session state management
-├── App.tsx                  # Main app component
-├── App.scss                 # Global styles
-└── index.tsx               # App entry point
+# Production
+REACT_APP_ENV=production
+REACT_APP_API_URL=https://rag-news-chatbot-backend.onrender.com/api
+REACT_APP_SOCKET_URL=https://rag-news-chatbot-backend.onrender.com
 ```
 
-## Components
+## 📁 Project Structure
 
-### ChatInterface
-Main chat container that manages:
-- Socket.io connection
-- Message sending/receiving
-- Session management
-- Relevant articles display
+```
+frontend/
+├── public/
+│   └── index.html
+├── src/
+│   ├── components/        # React components
+│   │   ├── ChatInterface.tsx
+│   │   ├── ChatMessages.tsx
+│   │   ├── ChatInput.tsx
+│   │   └── TypingIndicator.tsx
+│   ├── contexts/          # State management
+│   │   └── SessionContext.tsx
+│   ├── config/           # Configuration
+│   │   └── index.ts
+│   ├── App.tsx           # Main app component
+│   ├── App.scss          # Global styles
+│   └── index.tsx         # Entry point
+└── package.json
+```
 
-### SessionContext
-React context for managing:
-- Session ID persistence
-- Chat history
-- Loading states
-- Error handling
+## 🎨 Features
 
-### ChatInput
-Input component with:
-- Auto-resizing textarea
-- Enter key submission
-- Send button with loading states
+- **Real-time Chat**: WebSocket-based communication
+- **Session Management**: Persistent chat sessions
+- **Responsive Design**: Mobile-friendly interface
+- **Dynamic Topics**: Auto-generated news topics
+- **Modern UI**: Clean, professional design
+- **Error Handling**: Graceful error states
 
-### ChatMessages
-Message display with:
-- User/bot message styling
-- Timestamp formatting
-- Typing indicators
-- Welcome message
-
-## Features
-
-### Real-time Communication
-- Uses Socket.io for instant messaging
-- Falls back to REST API if socket connection fails
-- Automatic reconnection handling
-
-### Session Management
-- Automatic session creation on app load
-- Session persistence in localStorage
-- Clear session functionality
-- Chat history loading
-
-### Responsive Design
-- Mobile-first approach
-- Adaptive layout for different screen sizes
-- Touch-friendly interface
-- Dark mode support
-
-### User Experience
-- Typing indicators during bot responses
-- Smooth scrolling to new messages
-- Loading states and error handling
-- Relevant articles display
-
-## Styling
-
-The app uses SCSS with:
-- CSS custom properties for theming
-- Responsive breakpoints
-- Dark mode support
-- Smooth animations and transitions
-- Modern gradient backgrounds
-
-### Key Style Features
-- Glassmorphism design
-- Smooth animations
-- Hover effects
-- Responsive typography
-- Accessible color contrast
-
-## Development
-
-### Available Scripts
+## 🔧 Available Scripts
 
 - `npm start` - Start development server
 - `npm run build` - Build for production
 - `npm test` - Run tests
 - `npm run eject` - Eject from Create React App
 
-### Adding New Features
+## 🎯 Key Components
 
-1. **New Components**: Add to `src/components/`
-2. **State Management**: Use SessionContext or create new contexts
-3. **Styling**: Add SCSS files and import in components
-4. **API Integration**: Add new methods to context or create service files
+### ChatInterface
+Main chat component with session management and real-time communication.
 
-### Code Style
+### SessionContext
+Context provider for managing chat sessions, messages, and API calls.
 
-- Use TypeScript for type safety
-- Follow React hooks patterns
-- Use functional components
-- Implement proper error boundaries
-- Use semantic HTML
+### ChatMessages
+Component for displaying chat messages with proper formatting.
 
-## Deployment
+### ChatInput
+Input component with send functionality and typing indicators.
 
-### Build for Production
+## 🚀 Deployment
 
-```bash
-npm run build
-```
+Deployed on Render.com with automatic builds from GitHub.
 
-This creates a `build` folder with optimized production files.
+**Build Command**: `npm install && npm run build`
+**Publish Directory**: `build`
 
-### Environment Configuration
+## 📱 Responsive Design
 
-For production, update environment variables:
+- Mobile-first approach
+- Adaptive layout for all screen sizes
+- Touch-friendly interface
+- Optimized for both desktop and mobile
 
-```bash
-REACT_APP_API_URL=https://your-backend-url.com/api
-REACT_APP_SOCKET_URL=https://your-backend-url.com
-```
+## 🔒 Security
 
-### Hosting Options
-
-- **Netlify**: Drag and drop the build folder
-- **Vercel**: Connect your GitHub repository
-- **GitHub Pages**: Use `gh-pages` package
-- **AWS S3**: Upload build files to S3 bucket
-
-### Docker Deployment
-
-Create a `Dockerfile`:
-
-```dockerfile
-FROM node:18-alpine as build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM nginx:alpine
-COPY --from=build /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-## Performance Optimization
-
-- Code splitting with React.lazy()
-- Memoization with React.memo()
-- Optimized bundle size
-- Lazy loading of components
-- Efficient re-renders
-
-## Browser Support
-
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Mobile browsers
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Socket Connection Failed**: Check backend server and CORS settings
-2. **API Errors**: Verify backend URL and API endpoints
-3. **Build Errors**: Check TypeScript types and dependencies
-4. **Styling Issues**: Verify SCSS compilation
-
-### Debug Mode
-
-Enable debug logging by setting:
-```javascript
-localStorage.setItem('debug', 'true');
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-ISC
+- Environment variable validation
+- CORS configuration
+- Input sanitization
+- Error boundary implementation
