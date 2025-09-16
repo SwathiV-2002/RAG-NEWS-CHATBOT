@@ -45,14 +45,11 @@ class VectorService {
 
   async testConnection() {
     try {
+      // Test without authentication first
       const response = await axios.get(`${this.qdrantBaseUrl}/collections`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        },
         timeout: 10000
       });
-      console.log('✅ Qdrant connection successful');
+      console.log('✅ Qdrant connection successful (no auth)');
       return true;
     } catch (error) {
       console.error('❌ Qdrant connection failed:', error.message);
