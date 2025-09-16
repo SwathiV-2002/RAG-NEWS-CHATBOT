@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from '../contexts/SessionContext';
-import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import { io, Socket } from 'socket.io-client';
