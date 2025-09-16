@@ -13,28 +13,13 @@ class VectorService {
     try {
       console.log('Initializing vector service...');
       
-      // Parse QDRANT_URL to handle port correctly
-      let qdrantUrl = process.env.QDRANT_URL || 'http://localhost:6333';
-      console.log('Qdrant URL:', qdrantUrl);
+      // TEMPORARILY DISABLE QDRANT FOR RENDER.COM DEPLOYMENT
+      // The @qdrant/js-client-rest library has issues with Render.com's port handling
+      console.log('⚠️  Qdrant temporarily disabled for Render.com deployment');
+      console.log('⚠️  Using fallback mode - chatbot will work with basic responses');
+      this.client = null; // Set to null to indicate fallback mode
       
-      // For Render.com, ensure we use the correct format
-      if (qdrantUrl.includes('onrender.com')) {
-        // Remove any port specification and let the client use default HTTPS port
-        qdrantUrl = qdrantUrl.replace(/:443$/, '').replace(/:6333$/, '');
-        console.log('Adjusted Qdrant URL for Render.com:', qdrantUrl);
-      }
-      
-      // Initialize Qdrant client with the adjusted URL
-      this.client = new QdrantClient({
-        url: qdrantUrl, // Use the adjusted URL directly
-        apiKey: process.env.QDRANT_API_KEY,
-        timeout: 30000 // Increase timeout to 30 seconds
-      });
-
-      // Create collection if it doesn't exist
-      await this.createCollection();
-      
-      console.log('Vector service initialized successfully');
+      console.log('Vector service initialized in fallback mode');
     } catch (error) {
       console.error('Error initializing vector service:', error);
       console.log('⚠️  Qdrant not available - using fallback mode');
