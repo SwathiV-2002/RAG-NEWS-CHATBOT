@@ -7,6 +7,7 @@ class VectorService {
     this.collectionName = 'news_articles';
     this.embeddingModel = 'jina-embeddings-v2-base-en';
     this.embeddingApiUrl = 'https://api.jina.ai/v1/embeddings';
+    this.isAvailable = false; // Track if Qdrant is available
   }
 
   async initialize() {
@@ -35,9 +36,11 @@ class VectorService {
       try {
         await this.createCollection();
         console.log('Collection setup completed');
+        this.isAvailable = true; // Mark as available after successful setup
       } catch (collectionError) {
         console.error('Collection creation failed, but continuing:', collectionError.message);
         // Don't fail the entire initialization for collection issues
+        this.isAvailable = true; // Still mark as available if connection works
       }
       
       console.log('Vector service initialized successfully');
@@ -45,6 +48,7 @@ class VectorService {
       console.error('Error initializing vector service:', error);
       console.log('⚠️  Qdrant not available - using fallback mode');
       this.client = null; // Set to null to indicate fallback mode
+      this.isAvailable = false; // Mark as not available
       // Don't throw error, allow service to continue in fallback mode
     }
   }
@@ -142,8 +146,19 @@ class VectorService {
     return Math.abs(hash);
   }
 
+  // Method to check if Qdrant is available
+  isQdrantAvailable() {
+    return this.isAvailable && this.qdrantBaseUrl;
+  }
+
   async storeArticle(article, embedding) {
     try {
+      // Check if Qdrant is available
+      if (!this.isQdrantAvailable()) {
+        console.log('⚠️  Qdrant not available - skipping article storage');
+        return;
+      }
+
       const point = {
         id: article.id,
         vector: embedding,
@@ -162,6 +177,8 @@ class VectorService {
         points: [point]
       });
 
+      console.log(`✅ Stored article: ${article.title}`);
+
     } catch (error) {
       console.error('Error storing article:', error);
       throw error;
@@ -171,7 +188,7 @@ class VectorService {
   async searchSimilar(query, limit = 5) {
     try {
       // If Qdrant is not available, return empty results
-      if (!this.qdrantBaseUrl) {
+      if (!this.isQdrantAvailable()) {
         console.log('⚠️  Qdrant not available - returning empty search results');
         return [];
       }
