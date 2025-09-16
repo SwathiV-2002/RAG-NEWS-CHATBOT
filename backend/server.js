@@ -80,6 +80,8 @@ app.post('/api/chat', async (req, res) => {
     let session = await sessionService.getSession(sessionId);
     if (!session) {
       await sessionService.createSession(sessionId);
+      // Wait a moment for session to be fully created
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     // Get relevant news articles using RAG
