@@ -24,12 +24,9 @@ class VectorService {
         console.log('Adjusted Qdrant URL for Render.com:', qdrantUrl);
       }
       
-      // Initialize Qdrant client with explicit host and port
-      const urlObj = new URL(qdrantUrl);
+      // Initialize Qdrant client with the adjusted URL
       this.client = new QdrantClient({
-        host: urlObj.hostname,
-        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
-        scheme: urlObj.protocol.replace(':', ''),
+        url: qdrantUrl, // Use the adjusted URL directly
         apiKey: process.env.QDRANT_API_KEY,
         timeout: 30000 // Increase timeout to 30 seconds
       });
