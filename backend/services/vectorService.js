@@ -32,7 +32,13 @@ class VectorService {
       await this.testConnection();
       
       // Create collection if it doesn't exist
-      await this.createCollection();
+      try {
+        await this.createCollection();
+        console.log('Collection setup completed');
+      } catch (collectionError) {
+        console.error('Collection creation failed, but continuing:', collectionError.message);
+        // Don't fail the entire initialization for collection issues
+      }
       
       console.log('Vector service initialized successfully');
     } catch (error) {
@@ -60,12 +66,7 @@ class VectorService {
   async createCollection() {
     try {
       // Check if collection exists
-      const collectionsResponse = await axios.get(`${this.qdrantBaseUrl}/collections`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const collectionsResponse = await axios.get(`${this.qdrantBaseUrl}/collections`);
       
       const collections = collectionsResponse.data.result.collections;
       
@@ -76,11 +77,6 @@ class VectorService {
           vectors: {
             size: 768, // Jina embeddings v2 base dimension
             distance: 'Cosine'
-          }
-        }, {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json'
           }
         });
         
@@ -164,11 +160,6 @@ class VectorService {
       await axios.put(`${this.qdrantBaseUrl}/collections/${this.collectionName}/points`, {
         wait: true,
         points: [point]
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
       });
 
     } catch (error) {
@@ -195,11 +186,6 @@ class VectorService {
         vector: queryEmbedding,
         limit: limit,
         with_payload: true
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
       });
 
       const searchResult = searchResponse.data.result;
@@ -271,11 +257,6 @@ class VectorService {
       const scrollResponse = await axios.post(`${this.qdrantBaseUrl}/collections/${this.collectionName}/points/scroll`, {
         limit: 1000,
         with_payload: true
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
       });
       
       const allArticles = scrollResponse.data.result;
@@ -349,12 +330,7 @@ class VectorService {
 
   async getCollectionInfo() {
     try {
-      const response = await axios.get(`${this.qdrantBaseUrl}/collections/${this.collectionName}`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await axios.get(`${this.qdrantBaseUrl}/collections/${this.collectionName}`);
       
       const collection = response.data.result;
       return {
@@ -370,12 +346,7 @@ class VectorService {
 
   async clearCollection() {
     try {
-      await axios.delete(`${this.qdrantBaseUrl}/collections/${this.collectionName}`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      await axios.delete(`${this.qdrantBaseUrl}/collections/${this.collectionName}`);
       console.log(`Collection ${this.collectionName} cleared`);
     } catch (error) {
       console.error('Error clearing collection:', error);
