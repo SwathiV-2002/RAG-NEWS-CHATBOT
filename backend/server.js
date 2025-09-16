@@ -130,6 +130,20 @@ app.post('/api/session', (req, res) => {
   res.json({ sessionId });
 });
 
+// Simple test endpoint
+app.post('/api/test', async (req, res) => {
+  try {
+    const { message } = req.body;
+    res.json({ 
+      response: `Echo: ${message}`,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error in test API:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get available topics
 app.get('/api/topics', async (req, res) => {
   try {
