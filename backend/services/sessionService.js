@@ -11,9 +11,10 @@ class SessionService {
     try {
       console.log('Initializing session service...');
       
-      // Check if Redis is available in production
-      if (process.env.NODE_ENV === 'production' && !process.env.REDIS_URL) {
-        console.log('⚠️  No Redis URL in production - using in-memory storage');
+      // Check if Redis is available
+      if (!process.env.REDIS_URL) {
+        console.log('⚠️  No Redis URL provided - using in-memory storage');
+        console.log('💡  To use Redis in production, add REDIS_URL environment variable');
         this.initializeInMemoryStorage();
         return;
       }
