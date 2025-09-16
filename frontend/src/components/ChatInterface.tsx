@@ -29,7 +29,7 @@ const ChatInterface: React.FC = () => {
   // Initialize socket connection
   useEffect(() => {
     const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
-      transports: ['websocket', 'polling'],
+      transports: ['polling'], // Use polling instead of websocket for Render.com compatibility
       timeout: 20000,
       reconnection: true,
       reconnectionAttempts: 5,
