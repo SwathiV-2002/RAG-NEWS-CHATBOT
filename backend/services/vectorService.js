@@ -16,11 +16,11 @@ class VectorService {
       let qdrantUrl = process.env.QDRANT_URL || 'http://localhost:6333';
       console.log('Qdrant URL:', qdrantUrl);
       
-      // For Render.com, ensure we use the correct format
-      if (qdrantUrl.includes('onrender.com')) {
+      // For production deployments, ensure we use the correct format
+      if (qdrantUrl.includes('onrender.com') || qdrantUrl.includes('railway.app') || qdrantUrl.includes('herokuapp.com')) {
         // Remove any port specification and let the client use default HTTPS port
         qdrantUrl = qdrantUrl.replace(/:443$/, '').replace(/:6333$/, '');
-        console.log('Adjusted Qdrant URL for Render.com:', qdrantUrl);
+        console.log('Adjusted Qdrant URL for production:', qdrantUrl);
       }
       
       // Store the base URL for direct REST API calls

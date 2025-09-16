@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 require('dotenv').config();
 
+const config = require('./config');
 const newsService = require('./services/newsService');
 const ragService = require('./services/ragService');
 const sessionService = require('./services/sessionService');
@@ -14,25 +15,21 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: [
-      process.env.FRONTEND_URL || "http://localhost:3000",
-      "https://rag-news-chatbot-frontend.onrender.com",
-      "http://localhost:3000"
-    ],
+    origin: config.corsOrigins,
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ['websocket', 'polling'],
+  transports: config.socketTransports,
   allowEIO3: true,
-  path: '/my-socket/'
+  path: config.socketPath
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = config.port;
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: config.corsOrigins,
   credentials: true
 }));
 app.use(express.json());

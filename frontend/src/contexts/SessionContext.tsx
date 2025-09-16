@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
+import config from '../config';
 
 interface Message {
   id: string;
@@ -8,8 +9,16 @@ interface Message {
   timestamp: string;
 }
 
+interface Session {
+  id: string;
+  createdAt: string;
+  lastActivity: string;
+  messageCount: number;
+}
+
 interface SessionContextType {
   sessionId: string | null;
+  session: Session | null;
   messages: Message[];
   isLoading: boolean;
   error: string | null;
@@ -25,10 +34,10 @@ interface SessionProviderProps {
   children: ReactNode;
 }
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,10 +47,18 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       setIsLoading(true);
       setError(null);
       
-      const response = await axios.post(`${API_BASE_URL}/session`);
+      const response = await axios.post(`${config.apiUrl}/session`);
       const newSessionId = response.data.sessionId;
       
+      const newSession: Session = {
+        id: newSessionId,
+        createdAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString(),
+        messageCount: 0
+      };
+      
       setSessionId(newSessionId);
+      setSession(newSession);
       setMessages([]);
       
       // Store session ID in localStorage
@@ -62,10 +79,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       setIsLoading(true);
       setError(null);
       
-      await axios.delete(`${API_BASE_URL}/session/${sessionId}`);
+      await axios.delete(`${config.apiUrl}/session/${sessionId}`);
       
       setMessages([]);
       setSessionId(null);
+      setSession(null);
       localStorage.removeItem('chatSessionId');
       
     } catch (error) {
@@ -85,6 +103,15 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
     };
     
     setMessages(prev => [...prev, newMessage]);
+    
+    // Update session activity and message count
+    if (session) {
+      setSession(prev => prev ? {
+        ...prev,
+        lastActivity: new Date().toISOString(),
+        messageCount: prev.messageCount + 1
+      } : null);
+    }
   };
 
   const loadSessionHistory = async () => {
@@ -94,7 +121,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       setIsLoading(true);
       setError(null);
       
-      const response = await axios.get(`${API_BASE_URL}/session/${sessionId}/history`);
+      const response = await axios.get(`${config.apiUrl}/session/${sessionId}/history`);
       const history = response.data.history;
       
       setMessages(history);
@@ -123,6 +150,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
 
   const value: SessionContextType = {
     sessionId,
+    session,
     messages,
     isLoading,
     error,

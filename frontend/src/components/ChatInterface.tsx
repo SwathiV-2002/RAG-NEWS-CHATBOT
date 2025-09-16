@@ -5,8 +5,7 @@ import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import config from '../config';
 
 interface RelevantArticle {
   id: string;
@@ -18,7 +17,7 @@ interface RelevantArticle {
 }
 
 const ChatInterface: React.FC = () => {
-  const { sessionId, messages, addMessage, createSession, clearSession, isLoading, error } = useSession();
+  const { sessionId, session, messages, addMessage, createSession, clearSession, isLoading, error } = useSession();
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -26,15 +25,30 @@ const ChatInterface: React.FC = () => {
   const [availableTopics, setAvailableTopics] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Utility function to format session duration
+  const formatSessionDuration = (createdAt: string) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffMs = now.getTime() - created.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just started';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
+
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
-      transports: ['polling'], // Use polling instead of websocket for Render.com compatibility
-      timeout: 20000,
+    const newSocket = io(config.socketUrl, {
+      transports: config.socketTransports as any,
+      timeout: config.socketTimeout,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      path: '/my-socket/'
+      reconnectionAttempts: config.reconnectionAttempts,
+      reconnectionDelay: config.reconnectionDelay,
+      path: config.socketPath
     });
     
     newSocket.on('bot-response', (data) => {
@@ -95,7 +109,7 @@ const ChatInterface: React.FC = () => {
   useEffect(() => {
     const fetchTopics = async (retryCount = 0) => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/topics`);
+        const response = await axios.get(`${config.apiUrl}/topics`);
         setAvailableTopics(response.data.topics);
       } catch (error: any) {
         console.error('Error fetching topics:', error);
@@ -127,7 +141,7 @@ const ChatInterface: React.FC = () => {
         });
       } else {
         // Fallback to REST API
-        const response = await axios.post(`${API_BASE_URL}/chat`, {
+        const response = await axios.post(`${config.apiUrl}/chat`, {
           message: message.trim(),
           sessionId: sessionId
         });
@@ -176,15 +190,27 @@ const ChatInterface: React.FC = () => {
       <div className="chat-header">
         <h1>News Chatbot</h1>
         <p className="subtitle">Ask me anything about the latest news</p>
-        {sessionId && (
+        {sessionId && session && (
           <div className="session-info">
-            Session: {sessionId.substring(0, 8)}...
+            <div className="session-details">
+              <span className="session-label">Session:</span>
+              <span className="session-id" title={`Full ID: ${sessionId}`}>
+                {sessionId.substring(0, 8)}...
+              </span>
+              <span className="message-count">
+                {messages.length} message{messages.length !== 1 ? 's' : ''}
+              </span>
+              <span className="session-duration" title={`Started: ${new Date(session.createdAt).toLocaleString()}`}>
+                {formatSessionDuration(session.createdAt)}
+              </span>
+            </div>
             <button 
               className="clear-button"
               onClick={handleClearSession}
               disabled={isLoading}
+              title="Start a new conversation"
             >
-              Clear Chat
+              🗑️ New Chat
             </button>
           </div>
         )}

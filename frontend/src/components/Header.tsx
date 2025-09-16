@@ -3,8 +3,8 @@ import React from 'react';
 const Header: React.FC = () => {
   return (
     <header className="header">
-      <h1>RAG News Chatbot</h1>
-      <p className="subtitle">Ask questions about the latest news</p>
+      <h1>GlobeWire</h1>
+      <p className="subtitle">A wire to the world’s happenings.</p>
     </header>
   );
 };
