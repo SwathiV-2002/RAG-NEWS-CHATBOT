@@ -75,6 +75,12 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'Message and sessionId are required' });
     }
 
+    // Ensure session exists
+    let session = await sessionService.getSession(sessionId);
+    if (!session) {
+      await sessionService.createSession(sessionId);
+    }
+
     // Get relevant news articles using RAG
     const relevantArticles = await ragService.retrieveRelevantArticles(message);
     
