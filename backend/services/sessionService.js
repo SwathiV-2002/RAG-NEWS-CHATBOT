@@ -11,26 +11,27 @@ class SessionService {
     try {
       console.log('Initializing session service...');
       
-      // Create Redis client
+      // Check if Redis is available in production
+      if (process.env.NODE_ENV === 'production' && !process.env.REDIS_URL) {
+        console.log('⚠️  No Redis URL in production - using in-memory storage');
+        this.initializeInMemoryStorage();
+        return;
+      }
+      
+      // Create Redis client with production-friendly settings
       this.client = redis.createClient({
         url: process.env.REDIS_URL || 'redis://localhost:6379',
-        retry_strategy: (options) => {
-          if (options.error && options.error.code === 'ECONNREFUSED') {
-            console.log('⚠️  Redis server connection refused - falling back to in-memory storage');
-            this.initializeInMemoryStorage();
-            return undefined; // Stop retrying
+        socket: {
+          connectTimeout: 2000,
+          lazyConnect: true,
+          reconnectStrategy: (retries) => {
+            if (retries > 2) {
+              console.log('⚠️  Redis connection failed - falling back to in-memory storage');
+              this.initializeInMemoryStorage();
+              return false; // Stop retrying
+            }
+            return Math.min(retries * 100, 1000);
           }
-          if (options.total_retry_time > 5000) { // Reduced retry time
-            console.log('⚠️  Redis retry time exhausted - falling back to in-memory storage');
-            this.initializeInMemoryStorage();
-            return undefined;
-          }
-          if (options.attempt > 3) { // Reduced retry attempts
-            console.log('⚠️  Redis max retry attempts reached - falling back to in-memory storage');
-            this.initializeInMemoryStorage();
-            return undefined;
-          }
-          return Math.min(options.attempt * 100, 1000);
         }
       });
 
