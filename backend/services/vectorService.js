@@ -1,14 +1,11 @@
-const { QdrantClient } = require('@qdrant/js-client-rest');
 const axios = require('axios');
 
 class VectorService {
   constructor() {
-    this.client = null;
     this.collectionName = 'news_articles';
     this.embeddingModel = 'jina-embeddings-v2-base-en';
     this.embeddingApiUrl = 'https://api.jina.ai/v1/embeddings';
     this.isAvailable = false; // Track if Qdrant is available
-    console.log('🔧 VectorService constructor: isAvailable =', this.isAvailable);
   }
 
   async initialize() {
@@ -40,7 +37,6 @@ class VectorService {
         await this.createCollection();
         console.log('Collection setup completed');
         this.isAvailable = true; // Mark as available after successful setup
-        console.log('🔧 VectorService initialize: isAvailable set to TRUE. Current state:', this.isAvailable, 'Qdrant URL:', this.qdrantBaseUrl);
       } catch (collectionError) {
         console.error('Collection creation failed, but continuing:', collectionError.message);
         // Don't fail the entire initialization for collection issues
@@ -152,13 +148,11 @@ class VectorService {
 
   // Method to check if Qdrant is available
   isQdrantAvailable() {
-    console.log('🔧 isQdrantAvailable check: this.isAvailable =', this.isAvailable, 'this.qdrantBaseUrl =', this.qdrantBaseUrl);
     return this.isAvailable && this.qdrantBaseUrl;
   }
 
   async storeArticle(article, embedding) {
     try {
-      console.log('🔧 storeArticle called. Checking Qdrant availability...');
       // Check if Qdrant is available
       if (!this.isQdrantAvailable()) {
         console.log('⚠️  Qdrant not available - skipping article storage');

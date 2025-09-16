@@ -3,7 +3,6 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const newsService = require('./services/newsService');
@@ -38,15 +37,8 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Rate limiting - temporarily disabled for debugging
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 1000, // Increased limit for development
-//   message: 'Too many requests from this IP, please try again later.',
-//   standardHeaders: true,
-//   legacyHeaders: false,
-// });
-// app.use('/api/', limiter);
+// Rate limiting - disabled for development
+// Uncomment and configure for production use
 
 // Initialize services
 async function initializeServices() {

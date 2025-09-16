@@ -1,11 +1,18 @@
 const axios = require('axios');
 const Parser = require('rss-parser');
-// const cheerio = require('cheerio'); // Temporarily disabled due to Node.js 18 compatibility
 const vectorService = require('./vectorService');
 
 class NewsService {
   constructor() {
-    this.parser = new Parser();
+    this.parser = new Parser({
+      customFields: {
+        feed: [],
+        item: []
+      },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
     this.newsArticles = [];
     this.rssFeeds = [
       'https://feeds.bbci.co.uk/news/rss.xml',
