@@ -52,6 +52,16 @@ async function initializeServices() {
   }
 }
 
+// Root route for Render.com health check
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    service: 'RAG News Chatbot Backend',
+    timestamp: new Date().toISOString(),
+    endpoints: ['/api/health', '/api/topics', '/api/chat', '/api/session']
+  });
+});
+
 // API Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
