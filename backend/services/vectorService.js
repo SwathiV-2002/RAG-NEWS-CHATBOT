@@ -13,13 +13,28 @@ class VectorService {
     try {
       console.log('Initializing vector service...');
       
-      // TEMPORARILY DISABLE QDRANT FOR RENDER.COM DEPLOYMENT
-      // The @qdrant/js-client-rest library has issues with Render.com's port handling
-      console.log('⚠️  Qdrant temporarily disabled for Render.com deployment');
-      console.log('⚠️  Using fallback mode - chatbot will work with basic responses');
-      this.client = null; // Set to null to indicate fallback mode
+      // Parse QDRANT_URL to handle port correctly
+      let qdrantUrl = process.env.QDRANT_URL || 'http://localhost:6333';
+      console.log('Qdrant URL:', qdrantUrl);
       
-      console.log('Vector service initialized in fallback mode');
+      // For Render.com, ensure we use the correct format
+      if (qdrantUrl.includes('onrender.com')) {
+        // Remove any port specification and let the client use default HTTPS port
+        qdrantUrl = qdrantUrl.replace(/:443$/, '').replace(/:6333$/, '');
+        console.log('Adjusted Qdrant URL for Render.com:', qdrantUrl);
+      }
+      
+      // Store the base URL for direct REST API calls
+      this.qdrantBaseUrl = qdrantUrl;
+      this.apiKey = process.env.QDRANT_API_KEY;
+      
+      // Test connection with direct REST API call
+      await this.testConnection();
+      
+      // Create collection if it doesn't exist
+      await this.createCollection();
+      
+      console.log('Vector service initialized successfully');
     } catch (error) {
       console.error('Error initializing vector service:', error);
       console.log('⚠️  Qdrant not available - using fallback mode');
@@ -28,17 +43,47 @@ class VectorService {
     }
   }
 
+  async testConnection() {
+    try {
+      const response = await axios.get(`${this.qdrantBaseUrl}/collections`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      });
+      console.log('✅ Qdrant connection successful');
+      return true;
+    } catch (error) {
+      console.error('❌ Qdrant connection failed:', error.message);
+      throw error;
+    }
+  }
+
   async createCollection() {
     try {
-      const collections = await this.client.getCollections();
+      // Check if collection exists
+      const collectionsResponse = await axios.get(`${this.qdrantBaseUrl}/collections`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
-      if (!collections.collections.find(c => c.name === this.collectionName)) {
+      const collections = collectionsResponse.data.result.collections;
+      
+      if (!collections.find(c => c.name === this.collectionName)) {
         console.log(`Creating collection: ${this.collectionName}`);
         
-        await this.client.createCollection(this.collectionName, {
+        await axios.put(`${this.qdrantBaseUrl}/collections/${this.collectionName}`, {
           vectors: {
             size: 768, // Jina embeddings v2 base dimension
             distance: 'Cosine'
+          }
+        }, {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
           }
         });
         
@@ -119,9 +164,14 @@ class VectorService {
         }
       };
 
-      await this.client.upsert(this.collectionName, {
+      await axios.put(`${this.qdrantBaseUrl}/collections/${this.collectionName}/points`, {
         wait: true,
         points: [point]
+      }, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
       });
 
     } catch (error) {
@@ -133,7 +183,7 @@ class VectorService {
   async searchSimilar(query, limit = 5) {
     try {
       // If Qdrant is not available, return empty results
-      if (!this.client) {
+      if (!this.qdrantBaseUrl) {
         console.log('⚠️  Qdrant not available - returning empty search results');
         return [];
       }
@@ -143,12 +193,19 @@ class VectorService {
       // Create embedding for the query
       const queryEmbedding = await this.createEmbedding(query);
       
-      // Search for similar articles
-      const searchResult = await this.client.search(this.collectionName, {
+      // Search for similar articles using direct REST API
+      const searchResponse = await axios.post(`${this.qdrantBaseUrl}/collections/${this.collectionName}/points/search`, {
         vector: queryEmbedding,
         limit: limit,
         with_payload: true
+      }, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
       });
+
+      const searchResult = searchResponse.data.result;
 
       console.log(`📊 Search returned ${searchResult.length} results`);
       searchResult.forEach((result, index) => {
@@ -213,11 +270,18 @@ class VectorService {
 
   async keywordSearch(query, limit = 5) {
     try {
-      // Get all articles and search by keywords
-      const allArticles = await this.client.scroll(this.collectionName, {
+      // Get all articles and search by keywords using direct REST API
+      const scrollResponse = await axios.post(`${this.qdrantBaseUrl}/collections/${this.collectionName}/points/scroll`, {
         limit: 1000,
         with_payload: true
+      }, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
       });
+      
+      const allArticles = scrollResponse.data.result;
 
       const queryWords = query.toLowerCase().split(/\s+/);
       const scoredArticles = [];
@@ -288,7 +352,14 @@ class VectorService {
 
   async getCollectionInfo() {
     try {
-      const collection = await this.client.getCollection(this.collectionName);
+      const response = await axios.get(`${this.qdrantBaseUrl}/collections/${this.collectionName}`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const collection = response.data.result;
       return {
         name: collection.name,
         vectorsCount: collection.vectors_count,
@@ -302,7 +373,12 @@ class VectorService {
 
   async clearCollection() {
     try {
-      await this.client.deleteCollection(this.collectionName);
+      await axios.delete(`${this.qdrantBaseUrl}/collections/${this.collectionName}`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
       console.log(`Collection ${this.collectionName} cleared`);
     } catch (error) {
       console.error('Error clearing collection:', error);
