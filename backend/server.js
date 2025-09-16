@@ -152,7 +152,6 @@ app.get('/api/topics', async (req, res) => {
 // Socket.io for real-time chat
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  console.log('Socket transport:', socket.conn.transport.name);
   
   socket.on('join-session', async (sessionId) => {
     socket.join(sessionId);

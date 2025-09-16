@@ -48,7 +48,6 @@ class NewsService {
       
       for (const feedUrl of this.rssFeeds) {
         try {
-          console.log(`Fetching from ${feedUrl}...`);
           const feed = await this.parser.parseURL(feedUrl);
           
           for (const item of feed.items.slice(0, 10)) { // Limit to 10 per feed
@@ -88,7 +87,6 @@ class NewsService {
           
           // Temporarily disabled cheerio due to Node.js 18 compatibility
           // Use RSS content only for now
-          console.log(`Using RSS content for ${item.title} (${fullContent.length} chars)`);
         } catch (error) {
           console.log(`Could not fetch full content for ${item.link}:`, error.message);
         }
@@ -108,7 +106,6 @@ class NewsService {
         summary: this.generateSummary(fullContent)
       };
       
-      console.log(`📰 Processed: ${article.title} from ${article.source} (${article.content.length} chars)`);
       return article;
     } catch (error) {
       console.error('Error processing article:', error);

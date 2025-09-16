@@ -50,11 +50,9 @@ const ChatInterface: React.FC = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('Socket connected successfully');
     });
 
     newSocket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
     });
 
     newSocket.on('connect_error', (error) => {
@@ -62,11 +60,9 @@ const ChatInterface: React.FC = () => {
     });
 
     newSocket.on('reconnect', (attemptNumber) => {
-      console.log('Socket reconnected after', attemptNumber, 'attempts');
     });
 
     newSocket.on('reconnect_attempt', (attemptNumber) => {
-      console.log('Socket reconnection attempt:', attemptNumber);
     });
 
     setSocket(newSocket);

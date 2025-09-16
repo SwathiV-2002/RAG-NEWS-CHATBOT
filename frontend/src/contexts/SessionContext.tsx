@@ -47,7 +47,6 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       // Store session ID in localStorage
       localStorage.setItem('chatSessionId', newSessionId);
       
-      console.log('New session created:', newSessionId);
     } catch (error) {
       console.error('Error creating session:', error);
       setError('Failed to create session. Please try again.');
@@ -69,7 +68,6 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       setSessionId(null);
       localStorage.removeItem('chatSessionId');
       
-      console.log('Session cleared');
     } catch (error) {
       console.error('Error clearing session:', error);
       setError('Failed to clear session. Please try again.');
@@ -100,7 +98,6 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ children }) =>
       const history = response.data.history;
       
       setMessages(history);
-      console.log('Session history loaded:', history.length, 'messages');
     } catch (error) {
       console.error('Error loading session history:', error);
       setError('Failed to load chat history.');
