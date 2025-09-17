@@ -58,6 +58,7 @@ app.get('/', (req, res) => {
     status: 'OK', 
     service: 'RAG News Chatbot Backend',
     timestamp: new Date().toISOString(),
+    version: '1.0.1',
     endpoints: ['/api/health', '/api/topics', '/api/chat', '/api/session']
   });
 });
