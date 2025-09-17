@@ -219,38 +219,43 @@ class VectorService {
         console.log(`${index + 1}. ${result.payload.title} (score: ${result.score.toFixed(3)})`);
       });
 
-      // Always deduplicate results by URL to avoid showing same article multiple times
+      // Always deduplicate results by title to avoid showing same article multiple times
       const uniqueResults = [];
-      const seenUrls = new Set();
+      const seenTitles = new Set();
       
       // Filter out irrelevant articles
       const irrelevantKeywords = ['bird', 'conservation', 'wildlife', 'nature', 'environment', 'climate', 'animal', 'species', 'trapper', 'predator', 'nest', 'egg', 'feather', 'wing', 'beak', 'new zealand', 'rare birds', 'backyard trappers', 'invasive predators', 'save its rare', 'nation of backyard'];
       
       for (const result of searchResult) {
-        if (!seenUrls.has(result.payload.url)) {
-          // Check if article is relevant to the query
-          const title = result.payload.title.toLowerCase();
-          const content = result.payload.content.toLowerCase();
-          const summary = result.payload.summary.toLowerCase();
-          
-          const hasIrrelevantContent = irrelevantKeywords.some(keyword => 
-            title.includes(keyword) || summary.includes(keyword) || content.includes(keyword)
-          );
-          
-          // Only include relevant articles
-          if (!hasIrrelevantContent) {
-            seenUrls.add(result.payload.url);
-            uniqueResults.push({
-              id: result.id,
-              score: result.score,
-              title: result.payload.title,
-              content: result.payload.content,
-              url: result.payload.url,
-              publishedDate: result.payload.publishedDate,
-              source: result.payload.source,
-              summary: result.payload.summary
-            });
-          }
+        const title = result.payload.title || '';
+        const normalizedTitle = title.toLowerCase().trim();
+        
+        // Skip if we've already seen this title
+        if (seenTitles.has(normalizedTitle)) {
+          continue;
+        }
+        
+        // Check if article is relevant to the query
+        const content = (result.payload.content || '').toLowerCase();
+        const summary = (result.payload.summary || '').toLowerCase();
+        
+        const hasIrrelevantContent = irrelevantKeywords.some(keyword => 
+          normalizedTitle.includes(keyword) || summary.includes(keyword) || content.includes(keyword)
+        );
+        
+        // Only include relevant articles
+        if (!hasIrrelevantContent && normalizedTitle.length > 0) {
+          seenTitles.add(normalizedTitle);
+          uniqueResults.push({
+            id: result.id,
+            score: result.score,
+            title: result.payload.title,
+            content: result.payload.content,
+            url: result.payload.url,
+            publishedDate: result.payload.publishedDate,
+            source: result.payload.source,
+            summary: result.payload.summary
+          });
         }
       }
       
@@ -341,8 +346,20 @@ class VectorService {
         }
       }
 
+      // Deduplicate by title and sort by score
+      const uniqueArticles = [];
+      const seenTitles = new Set();
+      
+      for (const article of scoredArticles) {
+        const normalizedTitle = (article.title || '').toLowerCase().trim();
+        if (!seenTitles.has(normalizedTitle) && normalizedTitle.length > 0) {
+          seenTitles.add(normalizedTitle);
+          uniqueArticles.push(article);
+        }
+      }
+      
       // Sort by score and return top results
-      return scoredArticles
+      return uniqueArticles
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 
