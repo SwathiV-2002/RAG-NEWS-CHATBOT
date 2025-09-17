@@ -39,17 +39,34 @@ app.use(express.json());
 
 // Initialize services
 async function initializeServices() {
+  console.log('Initializing services...');
+  
+  // Initialize each service independently to prevent one failure from crashing the server
   try {
-    console.log('Initializing services...');
     await vectorService.initialize();
-    await sessionService.initialize();
-    await ragService.initialize();
-    await newsService.initialize();
-    console.log('All services initialized successfully');
   } catch (error) {
-    console.error('Error initializing services:', error);
-    process.exit(1);
+    console.error('Vector service initialization failed:', error.message);
   }
+  
+  try {
+    await sessionService.initialize();
+  } catch (error) {
+    console.error('Session service initialization failed:', error.message);
+  }
+  
+  try {
+    await ragService.initialize();
+  } catch (error) {
+    console.error('RAG service initialization failed:', error.message);
+  }
+  
+  try {
+    await newsService.initialize();
+  } catch (error) {
+    console.error('News service initialization failed:', error.message);
+  }
+  
+  console.log('Service initialization completed');
 }
 
 // Root route for Render.com health check

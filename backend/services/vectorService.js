@@ -30,17 +30,24 @@ class VectorService {
       console.log('Qdrant API Key:', this.apiKey ? 'Set' : 'Not set (using no auth)');
       
       // Test connection with direct REST API call
-      await this.testConnection();
-      
-      // Create collection if it doesn't exist
       try {
-        await this.createCollection();
-        console.log('Collection setup completed');
-        this.isAvailable = true; // Mark as available after successful setup
-      } catch (collectionError) {
-        console.error('Collection creation failed, but continuing:', collectionError.message);
-        // Don't fail the entire initialization for collection issues
-        this.isAvailable = true; // Still mark as available if connection works
+        await this.testConnection();
+        console.log('✅ Qdrant connection successful');
+        this.isAvailable = true;
+        
+        // Create collection if it doesn't exist
+        try {
+          await this.createCollection();
+          console.log('Collection setup completed');
+        } catch (collectionError) {
+          console.error('Collection creation failed, but continuing:', collectionError.message);
+          // Don't fail the entire initialization for collection issues
+        }
+      } catch (connectionError) {
+        console.error('❌ Qdrant connection failed:', connectionError.message);
+        console.log('⚠️  Qdrant not available - using fallback mode');
+        this.isAvailable = false;
+        // Don't throw error, just continue in fallback mode
       }
       
       console.log('Vector service initialized successfully');
