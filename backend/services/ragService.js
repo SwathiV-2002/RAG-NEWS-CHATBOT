@@ -25,11 +25,26 @@ class RAGService {
     }
   }
 
-  async retrieveRelevantArticles(query, limit = 5) {
+  async retrieveRelevantArticles(query, conversationHistory = [], limit = 5) {
     try {
       console.log(`Retrieving relevant articles for query: ${query}`);
       
-      const similarArticles = await vectorService.searchSimilar(query, limit);
+      // Create a context-aware query by combining current query with recent conversation
+      let contextQuery = query;
+      
+      if (conversationHistory && conversationHistory.length > 0) {
+        // Get the last few messages for context
+        const recentMessages = conversationHistory.slice(-4); // Last 4 messages
+        const contextText = recentMessages
+          .map(msg => `${msg.role}: ${msg.content}`)
+          .join(' ');
+        
+        // Combine current query with context
+        contextQuery = `${contextText} ${query}`;
+        console.log(`Using context-aware query: ${contextQuery.substring(0, 200)}...`);
+      }
+      
+      const similarArticles = await vectorService.searchSimilar(contextQuery, limit);
       
       console.log(`Found ${similarArticles.length} relevant articles`);
       return similarArticles;
@@ -40,15 +55,15 @@ class RAGService {
     }
   }
 
-  async generateResponse(userQuery, relevantArticles) {
+  async generateResponse(userQuery, relevantArticles, conversationHistory = []) {
     try {
       console.log('Generating response with Gemini...');
       
       // Prepare context from relevant articles
       const context = this.prepareContext(relevantArticles);
       
-      // Create the prompt
-      const prompt = this.createPrompt(userQuery, context);
+      // Create the prompt with conversation history
+      const prompt = this.createPrompt(userQuery, context, conversationHistory);
       
       // Generate response using Gemini
       const result = await this.model.generateContent(prompt);
@@ -87,41 +102,112 @@ class RAGService {
     return context;
   }
 
-  createPrompt(userQuery, context) {
+  createPrompt(userQuery, context, conversationHistory = []) {
+    let conversationContext = '';
+    
+    if (conversationHistory && conversationHistory.length > 0) {
+      conversationContext = `\nCONVERSATION HISTORY:\n`;
+      conversationHistory.forEach((msg, index) => {
+        const role = msg.role === 'user' ? 'User' : 'Assistant';
+        conversationContext += `${role}: ${msg.content}\n`;
+      });
+      conversationContext += `\nCurrent User Question: ${userQuery}\n\n`;
+    }
+
+    // Check if this is a greeting
+    const isGreeting = /^(hi|hello|hey|good morning|good afternoon|good evening|greetings)$/i.test(userQuery.trim());
+
+    if (isGreeting) {
+      return `You are a friendly news assistant. The user has greeted you. Respond warmly and then suggest the available news topics they can ask about.
+
+${conversationContext}NEWS ARTICLES CONTEXT:
+${context}
+
+INSTRUCTIONS:
+1. Respond in a friendly, conversational tone like "Hi there! I'm your news assistant..."
+2. Briefly mention what you can help with
+3. Then list the main news topics available from the articles above
+4. Encourage them to ask about any specific topic
+5. Be warm and helpful, not formal
+
+RESPONSE:`;
+    }
+
     return `You are a knowledgeable news assistant with access to recent news articles. Answer the user's question using the provided news content.
 
-NEWS ARTICLES CONTEXT:
+${conversationContext}NEWS ARTICLES CONTEXT:
 ${context}
 
 USER QUESTION: ${userQuery}
 
 INSTRUCTIONS:
 1. Use ONLY the information from the provided news articles above
-2. Provide specific details, facts, and quotes from the articles
-3. Mention the source (e.g., "According to BBC News..." or "The Washington Post reports...")
-4. If multiple articles cover the same topic, combine the information
-5. If the articles don't contain relevant information, say: "The available news articles don't contain information about [topic]. The articles focus on [list main topics from articles]."
-6. Be specific and detailed - avoid vague responses
-7. Include relevant dates, numbers, and specific facts when available
-8. If asking about economy, look for business, financial, or economic news specifically
+2. Consider the conversation history to understand follow-up questions and maintain context
+3. If this is a follow-up question, reference previous topics discussed
+4. Format your response clearly with:
+   - Use emojis to make it more engaging (📰, 💡, 🔍, etc.)
+   - Use **bold** for important points and article titles
+   - Use bullet points or numbered lists when appropriate
+   - Keep paragraphs short and readable
+5. Mention the source (e.g., "According to BBC News..." or "The Washington Post reports...")
+6. If multiple articles cover the same topic, combine the information
+7. If the articles don't contain relevant information, say: "The available news articles don't contain information about [topic]. The articles focus on [list main topics from articles]."
+8. Be specific and detailed - avoid vague responses
+9. Include relevant dates, numbers, and specific facts when available
+10. If asking about economy, look for business, financial, or economic news specifically
+11. For follow-up questions, acknowledge the previous context and build upon it
 
 RESPONSE:`;
   }
 
   generateFallbackResponse(userQuery, relevantArticles) {
+    // Check if this is a greeting
+    const isGreeting = /^(hi|hello|hey|good morning|good afternoon|good evening|greetings)$/i.test(userQuery.trim());
+
+    if (isGreeting) {
+      let response = "👋 Hi there! I'm your news assistant. I can help you find information about the latest news.\n\n";
+      
+      if (relevantArticles.length > 0) {
+        response += "📰 Here are some current news topics you can ask about:\n\n";
+        
+        // Group articles by topic for better organization
+        const topics = {};
+        relevantArticles.slice(0, 5).forEach((article) => {
+          const topic = article.title.split('|')[0].trim() || article.title.split(':')[0].trim();
+          if (!topics[topic]) {
+            topics[topic] = [];
+          }
+          topics[topic].push(article);
+        });
+        
+        Object.entries(topics).forEach(([topic, articles], index) => {
+          response += `**${index + 1}. ${topic}**\n`;
+          const mainArticle = articles[0];
+          response += `   ${mainArticle.summary.substring(0, 120)}...\n`;
+          response += `   📖 Source: ${mainArticle.source}\n\n`;
+        });
+        
+        response += "💬 Feel free to ask me about any of these topics or anything else you're curious about!";
+      } else {
+        response += "⏳ I'm currently loading the latest news articles. Please try again in a moment!";
+      }
+      
+      return response;
+    }
+
     if (relevantArticles.length === 0) {
       return "I apologize, but I couldn't find any relevant news articles to answer your question. Please try asking about recent news topics or rephrase your question.";
     }
 
-    let response = "Based on the available news articles, here's what I found:\n\n";
+    let response = "📰 Based on the available news articles, here's what I found:\n\n";
     
     relevantArticles.forEach((article, index) => {
-      response += `${index + 1}. **${article.title}**\n`;
+      response += `**${index + 1}. ${article.title}**\n`;
       response += `   ${article.summary}\n`;
-      response += `   Source: ${article.source}\n\n`;
+      response += `   📖 Source: ${article.source}\n\n`;
     });
 
-    response += "For more detailed information, please check the full articles using the provided links.";
+    response += "💡 For more detailed information, please check the full articles using the provided links.";
     
     return response;
   }

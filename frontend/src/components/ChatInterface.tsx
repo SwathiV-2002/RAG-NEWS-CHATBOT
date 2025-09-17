@@ -22,6 +22,7 @@ const ChatInterface: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [relevantArticles, setRelevantArticles] = useState<RelevantArticle[]>([]);
   const [availableTopics, setAvailableTopics] = useState<string[]>([]);
+  const [showArticles, setShowArticles] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Utility function to format session duration
@@ -257,23 +258,35 @@ const ChatInterface: React.FC = () => {
 
       {relevantArticles.length > 0 && (
         <div className="relevant-articles">
-          <h4>Relevant Articles:</h4>
-          <div className="articles-list">
-            {relevantArticles.map((article) => (
-              <div key={article.id} className="article-item">
-                <h5>{article.title}</h5>
-                <p>{article.summary}</p>
-                <a 
-                  href={article.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="article-link"
-                >
-                  Read more from {article.source}
-                </a>
-              </div>
-            ))}
+          <div 
+            className="articles-header" 
+            onClick={() => setShowArticles(!showArticles)}
+          >
+            <h4>
+              📰 Relevant Articles ({relevantArticles.length})
+            </h4>
+            <span className="toggle-icon">
+              {showArticles ? '▼' : '▶'}
+            </span>
           </div>
+          {showArticles && (
+            <div className="articles-list">
+              {relevantArticles.map((article, index) => (
+                <div key={article.id || index} className="article-item">
+                  <h5>{article.title}</h5>
+                  <p className="article-summary">{article.summary}</p>
+                  <a 
+                    href={article.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="article-link"
+                  >
+                    📖 Read more from {article.source}
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

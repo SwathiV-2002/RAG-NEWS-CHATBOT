@@ -101,11 +101,14 @@ app.post('/api/chat', async (req, res) => {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // Get relevant news articles using RAG
-    const relevantArticles = await ragService.retrieveRelevantArticles(message);
+    // Get conversation history for context
+    const conversationHistory = await sessionService.getSessionHistory(sessionId);
     
-    // Generate response using Gemini
-    const response = await ragService.generateResponse(message, relevantArticles);
+    // Get relevant news articles using RAG with conversation context
+    const relevantArticles = await ragService.retrieveRelevantArticles(message, conversationHistory);
+    
+    // Generate response using Gemini with conversation context
+    const response = await ragService.generateResponse(message, relevantArticles, conversationHistory);
     
     // Store in session history
     await sessionService.addMessage(sessionId, 'user', message);

@@ -200,6 +200,25 @@ body {
   word-wrap: break-word;
   line-height: 1.4;
   
+  // Better text formatting for bot responses
+  p {
+    margin: 8px 0;
+  }
+  
+  strong, b {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  ul, ol {
+    margin: 8px 0;
+    padding-left: 20px;
+  }
+  
+  li {
+    margin: 4px 0;
+  }
+  
   .message-time {
     font-size: 0.7rem;
     opacity: 0.7;
@@ -423,50 +442,87 @@ body {
 
 // Relevant Articles Styles
 .relevant-articles {
-  padding: 15px 20px;
   background: #f8f9fa;
   border-top: 1px solid #e9ecef;
-  max-height: 200px;
-  overflow-y: auto;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
   
-  h4 {
-    margin-bottom: 10px;
-    color: #495057;
-    font-size: 0.9rem;
-    font-weight: 600;
+  .articles-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: #e9ecef;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    user-select: none;
+    
+    &:hover {
+      background: #dee2e6;
+    }
+    
+    h4 {
+      margin: 0;
+      color: #495057;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .toggle-icon {
+      font-size: 0.8rem;
+      color: #6c757d;
+      transition: transform 0.2s ease;
+    }
   }
   
   .articles-list {
+    padding: 15px 20px;
+    max-height: 300px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    animation: slideDown 0.3s ease-out;
   }
   
   .article-item {
-    padding: 10px;
+    padding: 12px;
     background: white;
     border-radius: 8px;
     border: 1px solid #e9ecef;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     
     &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+      border-color: #667eea;
     }
     
     h5 {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 600;
       color: #333;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     
-    p {
+    .article-summary {
       font-size: 0.8rem;
       color: #666;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     
     .article-link {
@@ -474,11 +530,29 @@ body {
       color: #667eea;
       text-decoration: none;
       font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s ease;
       
       &:hover {
+        color: #5a6fd8;
         text-decoration: underline;
       }
     }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding: 0 20px;
+  }
+  to {
+    opacity: 1;
+    max-height: 300px;
+    padding: 15px 20px;
   }
 }
 
@@ -546,6 +620,10 @@ body {
     background: #2d2d2d;
     color: #e0e0e0;
     border-color: #404040;
+    
+    strong, b {
+      color: #fff;
+    }
   }
   
   .chat-input-container {
@@ -567,19 +645,35 @@ body {
     background: #2d2d2d;
     border-color: #404040;
     
-    h4 {
-      color: #e0e0e0;
+    .articles-header {
+      background: #404040;
+      
+      &:hover {
+        background: #4a4a4a;
+      }
+      
+      h4 {
+        color: #e0e0e0;
+      }
+      
+      .toggle-icon {
+        color: #ccc;
+      }
     }
     
     .article-item {
       background: #1a1a1a;
       border-color: #404040;
       
+      &:hover {
+        border-color: #667eea;
+      }
+      
       h5 {
         color: #e0e0e0;
       }
       
-      p {
+      .article-summary {
         color: #ccc;
       }
     }
