@@ -1274,6 +1274,233 @@ This complete flow shows how every file contributes to the RAG pipeline, from in
 
 ---
 
+## 🔄 **Complete End-to-End Flow**
+
+### **Detailed File-by-File Execution**
+
+#### **Phase 1: User Input Processing**
+```javascript
+// 1. frontend/src/components/ChatInterface.tsx
+const handleSendMessage = async (message: string) => {
+  // User types message
+  const messageObj = {
+    id: Date.now().toString(),
+    role: 'user',
+    content: message,
+    timestamp: new Date().toISOString()
+  };
+  
+  // Add to local state
+  addMessage(messageObj);
+  
+  // Send via Socket.io
+  socket.emit('chat-message', {
+    message: message,
+    sessionId: sessionId
+  });
+};
+```
+
+#### **Phase 2: Backend Message Handling**
+```javascript
+// 2. backend/server.js
+socket.on('chat-message', async (data) => {
+  const { message, sessionId } = data;
+  
+  // Store user message first
+  await sessionService.addMessage(sessionId, 'user', message);
+  
+  // Get conversation history for context
+  const conversationHistory = await sessionService.getSessionHistory(sessionId);
+  
+  // Process through RAG pipeline
+  const relevantArticles = await ragService.retrieveRelevantArticles(message, conversationHistory);
+  const response = await ragService.generateResponse(message, relevantArticles, conversationHistory);
+  
+  // Store and send response
+  await sessionService.addMessage(sessionId, 'bot', response);
+  socket.emit('bot-response', { response, relevantArticles, sessionId });
+});
+```
+
+#### **Phase 3: RAG Pipeline Execution**
+```javascript
+// 3. backend/services/ragService.js
+async retrieveRelevantArticles(query, conversationHistory = []) {
+  // Context-aware search logic
+  let searchQuery = query;
+  
+  if (conversationHistory && conversationHistory.length > 0) {
+    const userMessages = conversationHistory.filter(msg => msg.role === 'user');
+    
+    if (userMessages.length > 1) {
+      const previousUserMessage = userMessages[userMessages.length - 2];
+      const isFollowUp = query.toLowerCase().includes('he') || 
+                        query.toLowerCase().includes('she') || 
+                        query.toLowerCase().includes('it') || 
+                        query.toLowerCase().includes('they');
+      
+      if (isFollowUp) {
+        searchQuery = `${previousUserMessage.content} ${query}`;
+      }
+    }
+  }
+  
+  // Vector search
+  const similarArticles = await vectorService.searchSimilar(searchQuery, 5);
+  return similarArticles;
+}
+```
+
+#### **Phase 4: Vector Search Execution**
+```javascript
+// 4. backend/services/vectorService.js
+async searchSimilar(query, limit = 5) {
+  // Create embedding for query
+  const queryEmbedding = await this.createEmbedding(query);
+  
+  // Search Qdrant
+  const searchResult = await axios.post(`${this.qdrantBaseUrl}/collections/news_articles/points/search`, {
+    vector: queryEmbedding,
+    limit: limit,
+    with_payload: true
+  });
+  
+  // Deduplicate and filter results
+  const uniqueResults = [];
+  const seenTitles = new Set();
+  
+  for (const result of searchResult.data.result) {
+    const title = result.payload.title || '';
+    const normalizedTitle = title.toLowerCase().trim();
+    
+    if (!seenTitles.has(normalizedTitle) && normalizedTitle.length > 0) {
+      seenTitles.add(normalizedTitle);
+      uniqueResults.push({
+        id: result.id,
+        score: result.score,
+        title: result.payload.title,
+        content: result.payload.content,
+        url: result.payload.url,
+        publishedDate: result.payload.publishedDate,
+        source: result.payload.source,
+        summary: result.payload.summary
+      });
+    }
+  }
+  
+  return uniqueResults;
+}
+```
+
+#### **Phase 5: Response Generation**
+```javascript
+// 5. backend/services/ragService.js
+async generateResponse(query, relevantArticles, conversationHistory) {
+  const prompt = this.createPrompt(query, relevantArticles, conversationHistory);
+  
+  try {
+    const result = await this.model.generateContent(prompt);
+    const response = result.response.text();
+    return response;
+  } catch (error) {
+    console.error('Error generating response:', error);
+    return this.generateFallbackResponse(query, relevantArticles);
+  }
+}
+
+createPrompt(query, relevantArticles, conversationHistory) {
+  let context = '';
+  
+  // Add conversation history
+  if (conversationHistory && conversationHistory.length > 0) {
+    context += 'Previous conversation:\n';
+    conversationHistory.forEach(msg => {
+      context += `${msg.role}: ${msg.content}\n`;
+    });
+    context += '\n';
+  }
+  
+  // Add relevant articles
+  if (relevantArticles && relevantArticles.length > 0) {
+    context += 'Relevant news articles:\n';
+    relevantArticles.forEach((article, index) => {
+      context += `${index + 1}. ${article.title}\n`;
+      context += `   Summary: ${article.summary}\n`;
+      context += `   Source: ${article.source}\n`;
+      context += `   URL: ${article.url}\n\n`;
+    });
+  }
+  
+  return `You are a helpful news assistant. Based on the following context, answer the user's question about news.
+
+${context}
+
+User's question: ${query}
+
+Please provide a helpful, accurate response based on the available news articles. Use emojis, bold text, and bullet points to make your response engaging and easy to read.`;
+}
+```
+
+#### **Phase 6: Frontend Response Handling**
+```javascript
+// 6. frontend/src/components/ChatInterface.tsx
+useEffect(() => {
+  socket.on('bot-response', (data) => {
+    const { response, relevantArticles, sessionId } = data;
+    
+    // Add bot message to state
+    const botMessage = {
+      id: Date.now().toString(),
+      role: 'bot',
+      content: response,
+      timestamp: new Date().toISOString()
+    };
+    
+    addMessage(botMessage);
+    
+    // Update relevant articles
+    setRelevantArticles(relevantArticles);
+    
+    // Hide typing indicator
+    setIsTyping(false);
+  });
+}, []);
+```
+
+### **Complete Data Flow Summary**
+
+```
+1. User Input → Frontend (ChatInterface.tsx)
+2. Frontend → Socket.io → Backend (server.js)
+3. Backend → Session Service → Redis (store message)
+4. Backend → RAG Service → Vector Service → Qdrant (search articles)
+5. RAG Service → Gemini API (generate response)
+6. Backend → Session Service → Redis (store response)
+7. Backend → Socket.io → Frontend (send response)
+8. Frontend → UI Update (display response + articles)
+```
+
+### **Performance Metrics**
+
+- **Total Response Time**: ~2-3 seconds
+- **Vector Search**: ~200-500ms
+- **Gemini API Call**: ~1-2 seconds
+- **Database Operations**: ~50-100ms
+- **Network Latency**: ~100-200ms
+
+### **Error Handling Flow**
+
+```
+1. Vector Search Fails → Fallback to Keyword Search
+2. Gemini API Fails → Fallback to Cached Response
+3. Redis Fails → Fallback to In-Memory Storage
+4. Qdrant Fails → Fallback to Static Response
+5. Network Fails → Retry with Exponential Backoff
+```
+
+---
+
 ## 📋 **Key Technical Areas Summary**
 
 ### 1. **News Ingestion & Embedding Generation with Jina**
