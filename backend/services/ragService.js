@@ -28,25 +28,50 @@ class RAGService {
   async retrieveRelevantArticles(query, conversationHistory = [], limit = 5) {
     try {
       console.log(`Retrieving relevant articles for query: ${query}`);
+      console.log(`Conversation history length: ${conversationHistory ? conversationHistory.length : 0}`);
+      console.log(`Conversation history:`, conversationHistory);
       
-      // Create a context-aware query by combining current query with recent conversation
-      let contextQuery = query;
+      // Simple but effective context handling
+      let searchQuery = query;
       
       if (conversationHistory && conversationHistory.length > 0) {
-        // Get the last few messages for context
-        const recentMessages = conversationHistory.slice(-4); // Last 4 messages
-        const contextText = recentMessages
-          .map(msg => `${msg.role}: ${msg.content}`)
-          .join(' ');
+        // Get user messages to understand what they were talking about
+        const userMessages = conversationHistory.filter(msg => msg.role === 'user');
         
-        // Combine current query with context
-        contextQuery = `${contextText} ${query}`;
-        console.log(`Using context-aware query: ${contextQuery.substring(0, 200)}...`);
+        if (userMessages.length > 1) {
+          // Get the previous user message (not the current one) for context
+          const previousUserMessage = userMessages[userMessages.length - 2];
+          const currentUserMessage = userMessages[userMessages.length - 1];
+          
+          console.log(`Previous user message: ${previousUserMessage.content}`);
+          console.log(`Current user message: ${currentUserMessage.content}`);
+          
+          // If current query uses pronouns or is a follow-up question, combine with previous context
+          const isFollowUp = query.toLowerCase().includes('he') || 
+                           query.toLowerCase().includes('she') || 
+                           query.toLowerCase().includes('it') || 
+                           query.toLowerCase().includes('they') ||
+                           query.toLowerCase().includes('why') ||
+                           query.toLowerCase().includes('how') ||
+                           query.toLowerCase().includes('when') ||
+                           query.toLowerCase().includes('where') ||
+                           query.toLowerCase().includes('what') ||
+                           query.toLowerCase().includes('who');
+          
+          console.log(`Is follow-up question: ${isFollowUp}`);
+          
+          if (isFollowUp) {
+            // For follow-up questions, search for the previous topic + current question
+            searchQuery = `${previousUserMessage.content} ${query}`;
+            console.log(`🔍 Follow-up detected. Searching for: ${searchQuery}`);
+          }
+        }
       }
       
-      const similarArticles = await vectorService.searchSimilar(contextQuery, limit);
-      
+      console.log(`Final search query: ${searchQuery}`);
+      const similarArticles = await vectorService.searchSimilar(searchQuery, limit);
       console.log(`Found ${similarArticles.length} relevant articles`);
+      
       return similarArticles;
       
     } catch (error) {
@@ -143,7 +168,10 @@ USER QUESTION: ${userQuery}
 INSTRUCTIONS:
 1. Use ONLY the information from the provided news articles above
 2. Consider the conversation history to understand follow-up questions and maintain context
-3. If this is a follow-up question, reference previous topics discussed
+3. If this is a follow-up question (using words like "why", "how", "what", "when", "where", "who"):
+   - Reference the previous topic being discussed
+   - Use pronouns like "he", "she", "it" appropriately based on context
+   - Build upon the previous conversation naturally
 4. Format your response clearly with:
    - Use emojis to make it more engaging (📰, 💡, 🔍, etc.)
    - Use **bold** for important points and article titles
@@ -184,7 +212,6 @@ RESPONSE:`;
           response += `**${index + 1}. ${topic}**\n`;
           const mainArticle = articles[0];
           response += `   ${mainArticle.summary.substring(0, 120)}...\n`;
-          response += `   📖 Source: ${mainArticle.source}\n\n`;
         });
         
         response += "💬 Feel free to ask me about any of these topics or anything else you're curious about!";
@@ -204,7 +231,6 @@ RESPONSE:`;
     relevantArticles.forEach((article, index) => {
       response += `**${index + 1}. ${article.title}**\n`;
       response += `   ${article.summary}\n`;
-      response += `   📖 Source: ${article.source}\n\n`;
     });
 
     response += "💡 For more detailed information, please check the full articles using the provided links.";

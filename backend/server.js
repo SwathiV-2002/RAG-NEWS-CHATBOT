@@ -101,7 +101,10 @@ app.post('/api/chat', async (req, res) => {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-    // Get conversation history for context
+    // Store user message first
+    await sessionService.addMessage(sessionId, 'user', message);
+    
+    // Get conversation history for context (now includes the current message)
     const conversationHistory = await sessionService.getSessionHistory(sessionId);
     
     // Get relevant news articles using RAG with conversation context
@@ -110,8 +113,7 @@ app.post('/api/chat', async (req, res) => {
     // Generate response using Gemini with conversation context
     const response = await ragService.generateResponse(message, relevantArticles, conversationHistory);
     
-    // Store in session history
-    await sessionService.addMessage(sessionId, 'user', message);
+    // Store bot response
     await sessionService.addMessage(sessionId, 'bot', response);
     
     res.json({ 
@@ -202,14 +204,19 @@ io.on('connection', (socket) => {
     try {
       const { message, sessionId } = data;
       
-      // Get relevant articles
-      const relevantArticles = await ragService.retrieveRelevantArticles(message);
-      
-      // Generate response
-      const response = await ragService.generateResponse(message, relevantArticles);
-      
-      // Store in session
+      // Store user message first
       await sessionService.addMessage(sessionId, 'user', message);
+      
+      // Get conversation history for context (now includes the current message)
+      const conversationHistory = await sessionService.getSessionHistory(sessionId);
+      
+      // Get relevant news articles using RAG with conversation context
+      const relevantArticles = await ragService.retrieveRelevantArticles(message, conversationHistory);
+      
+      // Generate response using Gemini with conversation context
+      const response = await ragService.generateResponse(message, relevantArticles, conversationHistory);
+      
+      // Store bot response
       await sessionService.addMessage(sessionId, 'bot', response);
       
       // Emit response back to client and room
